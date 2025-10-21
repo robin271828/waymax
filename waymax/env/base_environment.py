@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Core class definitions for MultiAgentEnvironment.
+"""Core class definitions for BaseEnvironment.
 
 This environment is designed to work with multiple objects (autonomous driving
 vehicle and other objects).
 """
+
 import chex
 from dm_env import specs
 import jax
@@ -222,8 +223,3 @@ def _multi_agent_reward_spec(
 ) -> specs.Array:
   """Gets the reward spec for a multi-agent environment."""
   return specs.Array(shape=(config.max_num_objects,), dtype=jnp.float32)
-
-
-# Add MultiAgentEnvironment as an alias for BaseEnvironment, since
-# BaseEnvironment already supports executing multiple agents.
-MultiAgentEnvironment = BaseEnvironment

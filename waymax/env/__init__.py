@@ -15,7 +15,6 @@
 """Reinforcement learning environment interfaces."""
 from waymax.env.abstract_environment import AbstractEnvironment
 from waymax.env.base_environment import BaseEnvironment
-from waymax.env.base_environment import MultiAgentEnvironment
 from waymax.env.errors import EpisodeAlreadyFinishedError
 from waymax.env.errors import SimulationNotInitializedError
 from waymax.env.planning_agent_environment import PlanningAgentDynamics

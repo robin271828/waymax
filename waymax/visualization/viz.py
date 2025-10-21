@@ -242,26 +242,28 @@ def _plot_path_points(ax: matplotlib.axes.Axes, paths: datatypes.Paths) -> None:
       ax.plot(xy[:, 0], xy[:, 1], 'go', ms=5, alpha=0.1)
 
 
-def plot_simulator_state(
+def plot_simulator_state_matplotlib(
+    ax: matplotlib.axes.Axes,
     state: datatypes.SimulatorState,
+    viz_config: utils.VizConfig,
     use_log_traj: bool = True,
-    viz_config: Optional[dict[str, Any]] = None,
     batch_idx: int = -1,
     highlight_obj: waymax_config.ObjectType = waymax_config.ObjectType.SDC,
-) -> np.ndarray:
-  """Plots np array image for SimulatorState.
+):
+  """Plots matplotlib figure for SimulatorState.
+
+  This is the preferred function for plotting SimulatorState as it is composable
+  with other visualization functions.
 
   Args:
+    ax: matplotlib axes.
     state: A SimulatorState instance.
+    viz_config: VizConfig controlling layout and style of the plot.
     use_log_traj: Set True to use logged trajectory, o/w uses simulated
       trajectory.
-    viz_config: dict for optional config.
     batch_idx: optional batch index.
     highlight_obj: Represents the type of objects that will be highlighted with
       `color.COLOR_DICT['controlled']` color.
-
-  Returns:
-    np image.
   """
   if batch_idx > -1:
     if len(state.shape) != 1:
@@ -271,11 +273,6 @@ def plot_simulator_state(
     state = _index_pytree(state, batch_idx)
   if state.shape:
     raise ValueError('Expecting 0 batch dimension, got %s' % len(state.shape))
-
-  viz_config = (
-      utils.VizConfig() if viz_config is None else utils.VizConfig(**viz_config)
-  )
-  fig, ax = utils.init_fig_ax(viz_config)
 
   # 1. Plots trajectory.
   traj = state.log_trajectory if use_log_traj else state.sim_trajectory
@@ -293,7 +290,7 @@ def plot_simulator_state(
       ax, state.log_traffic_light, state.timestep, verbose=False
   )
 
-  # 3. Gets np img, centered on selected agent's current location.
+  # 3. Center on selected agent's current location.
   # [A, 2]
   current_xy = traj.xy[:, state.timestep, :]
   if viz_config.center_agent_idx == -1:
@@ -308,6 +305,40 @@ def plot_simulator_state(
       origin_y + viz_config.front_y,
   ))
 
+
+def plot_simulator_state(
+    state: datatypes.SimulatorState,
+    use_log_traj: bool = True,
+    viz_config: Optional[dict[str, Any]] = None,
+    batch_idx: int = -1,
+    highlight_obj: waymax_config.ObjectType = waymax_config.ObjectType.SDC,
+) -> np.ndarray:
+  """Plots np array image for SimulatorState.
+
+  Prefer plot_simulator_state_matplotlib which does the same thing but returns a
+  figure instead of a rasterized image. This function is kept for backwards
+  compatibility, but should be removed in the future since it is not composible
+  with other visualization functions.
+
+  Args:
+    state: A SimulatorState instance.
+    use_log_traj: Set True to use logged trajectory, o/w uses simulated
+      trajectory.
+    viz_config: dict for optional config.
+    batch_idx: optional batch index.
+    highlight_obj: Represents the type of objects that will be highlighted with
+      `color.COLOR_DICT['controlled']` color.
+
+  Returns:
+    np image.
+  """
+  viz_config = (
+      utils.VizConfig() if viz_config is None else utils.VizConfig(**viz_config)
+  )
+  fig, ax = utils.init_fig_ax(viz_config)
+  plot_simulator_state_matplotlib(
+      ax, state, viz_config, use_log_traj, batch_idx, highlight_obj
+  )
   return utils.img_from_fig(fig)
 
 

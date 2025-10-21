@@ -39,7 +39,7 @@ class BaseEnvironmentTest(tf.test.TestCase, parameterized.TestCase):
     # TODO(b/251258357) Update environment tests to test different inputs args
     # including dynamics and controlled objects.
     self.env_config = _config.EnvironmentConfig(init_steps=10)
-    self.env = _env.MultiAgentEnvironment(
+    self.env = _env.BaseEnvironment(
         dynamics_model=dynamics.DeltaGlobal(), config=self.env_config
     )
     action_spec = self.env.action_spec()
@@ -134,7 +134,7 @@ class BaseEnvironmentTest(tf.test.TestCase, parameterized.TestCase):
         roadgraph_points=roadgraph_points,
         timestep=0,
     )
-    env = _env.MultiAgentEnvironment(
+    env = _env.BaseEnvironment(
         dynamics_model=dynamics.DeltaGlobal(),
         config=_config.EnvironmentConfig(
             init_steps=5, max_num_objects=num_agents

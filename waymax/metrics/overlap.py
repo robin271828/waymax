@@ -35,8 +35,8 @@ class OverlapMetric(abstract_metric.AbstractMetric):
     current_object_state = datatypes.dynamic_slice(
         simulator_state.sim_trajectory,
         simulator_state.timestep,
-        1,
-        -1,
+        slice_size=1,
+        axis=-1,
     )
     return self.compute_overlap(current_object_state)
 

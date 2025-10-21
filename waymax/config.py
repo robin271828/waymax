@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Configs for Waymax Environments."""
+
 import dataclasses
 import enum
 from typing import Optional, Sequence
@@ -51,9 +52,8 @@ class DatasetConfig:
     num_shards: Number of shards for parallel loading, no effect on data
       returned.
     deterministic: Whether to use deterministic parallel processing.
-    include_sdc_paths: [Waymo-internal only] Whether to include all valid future
-      paths for SDC according to roadgraph connectivity from its starting
-      position.
+    include_sdc_paths: Whether to include all valid future paths for SDC
+      according to roadgraph connectivity from its starting position.
     aggregate_timesteps: Whether to aggregate keys from tf examples, need to set
       to True for parsing SimulatorState afterwards.
     max_num_rg_points: Max number of roadgraph points in data.
@@ -126,6 +126,7 @@ class MetricsConfig:
       sdc_progression, kinematic_infeasibility. Additional custom metrics can be
       registered with `metric_factory.register_metric`.
   """
+
   metrics_to_run: tuple[str, ...] = ('log_divergence', 'overlap', 'offroad')
 
 
@@ -249,14 +250,19 @@ class WaymaxConfig:
           'order to compute route based metrics for SDC.'
       )
 
+
 WOD_1_0_0_TRAINING = DatasetConfig(
     path='gs:///waymo_open_dataset_motion_v_1_0_0/uncompressed/tf_example/training/training_tfexample.tfrecord@1000',
     max_num_rg_points=20000,
     data_format=DataFormat.TFRECORD,
 )
-
 WOD_1_0_0_VALIDATION = DatasetConfig(
     path='gs:///waymo_open_dataset_motion_v_1_0_0/uncompressed/tf_example/validation/validation_tfexample.tfrecord@150',
+    max_num_rg_points=20000,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_0_0_TESTING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_0_0/uncompressed/tf_example/testing/testing_tfexample.tfrecord@150',
     max_num_rg_points=20000,
     data_format=DataFormat.TFRECORD,
 )
@@ -266,15 +272,70 @@ WOD_1_1_0_TRAINING = DatasetConfig(
     max_num_rg_points=20000,
     data_format=DataFormat.TFRECORD,
 )
-
 WOD_1_1_0_VALIDATION = DatasetConfig(
     path='gs:///waymo_open_dataset_motion_v_1_1_0/uncompressed/tf_example/validation/validation_tfexample.tfrecord@150',
     max_num_rg_points=20000,
     data_format=DataFormat.TFRECORD,
 )
+WOD_1_1_0_TESTING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_1_0/uncompressed/tf_example/testing/testing_tfexample.tfrecord@150',
+    max_num_rg_points=20000,
+    data_format=DataFormat.TFRECORD,
+)
 
-WOD_1_2_0_TEST = DatasetConfig(
+WOD_1_2_0_TRAINING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_2_0/uncompressed/tf_example/training/training_tfexample.tfrecord@1000',
+    max_num_rg_points=30000,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_2_0_VALIDATION = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_2_0/uncompressed/tf_example/validation/validation_tfexample.tfrecord@150',
+    max_num_rg_points=30000,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_2_0_TESTING = DatasetConfig(
     path='gs:///waymo_open_dataset_motion_v_1_2_0/uncompressed/tf_example/testing/testing_tfexample.tfrecord@150',
     max_num_rg_points=30000,
+    data_format=DataFormat.TFRECORD,
+)
+
+WOD_1_3_0_TRAINING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_3_0/uncompressed/tf_example/training/training_tfexample.tfrecord@1000',
+    max_num_rg_points=30000,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_3_0_VALIDATION = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_3_0/uncompressed/tf_example/validation/validation_tfexample.tfrecord@150',
+    max_num_rg_points=30000,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_3_0_TESTING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_3_0/uncompressed/tf_example/testing/testing_tfexample.tfrecord@150',
+    max_num_rg_points=30000,
+    data_format=DataFormat.TFRECORD,
+)
+
+WOD_1_3_1_TRAINING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/training/training_tfexample.tfrecord@1000',
+    max_num_rg_points=30000,
+    include_sdc_paths=True,
+    num_paths=45,
+    num_points_per_path=800,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_3_1_VALIDATION = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/validation/validation_tfexample.tfrecord@150',
+    max_num_rg_points=30000,
+    include_sdc_paths=True,
+    num_paths=45,
+    num_points_per_path=800,
+    data_format=DataFormat.TFRECORD,
+)
+WOD_1_3_1_TESTING = DatasetConfig(
+    path='gs:///waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/testing/testing_tfexample.tfrecord@150',
+    max_num_rg_points=30000,
+    include_sdc_paths=True,
+    num_paths=45,
+    num_points_per_path=800,
     data_format=DataFormat.TFRECORD,
 )

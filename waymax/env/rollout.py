@@ -181,7 +181,7 @@ def rollout(
       rng=rng,
       actor_state=actor_init_state,
   )
-  carry, output = jax.lax.scan(
+  carry, output = jax.lax.scan(  # pytype: disable=wrong-arg-types  # lax-types
       _step, init_carry, xs=jnp.arange(rollout_num_steps)
   )
 

@@ -43,7 +43,7 @@ class BraxWrapperTest(parameterized.TestCase, tf.test.TestCase):
     self.state_0 = next(self.dataset_iter)
 
     self.env_config = _config.EnvironmentConfig(init_steps=88)
-    multi_stateless_env = base_environment.MultiAgentEnvironment(
+    multi_stateless_env = base_environment.BaseEnvironment(
         dynamics_model=dynamics.DeltaGlobal(), config=self.env_config
     )
     self.multi_env = brax_wrapper.BraxWrapper(

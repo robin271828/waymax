@@ -17,6 +17,7 @@
 from waymax.visualization.viz import plot_observation
 from waymax.visualization.viz import plot_roadgraph_points
 from waymax.visualization.viz import plot_simulator_state
+from waymax.visualization.viz import plot_simulator_state_matplotlib
 from waymax.visualization.viz import plot_single_agent_brax_timestep
 from waymax.visualization.viz import plot_traffic_light_signals_as_points
 from waymax.visualization.viz import plot_trajectory

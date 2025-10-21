@@ -41,7 +41,7 @@ class WaymaxDMEnvTest(parameterized.TestCase):
     # TODO(b/251258357) Update environment tests to use other dynamics.
     # Uses large init step (in this case only 2 steps left) to reduce test time.
     self.env_config = _config.EnvironmentConfig(init_steps=88)
-    self.multi_stateless_env = base_environment.MultiAgentEnvironment(
+    self.multi_stateless_env = base_environment.BaseEnvironment(
         dynamics_model=dynamics.DeltaGlobal(), config=self.env_config
     )
     self.multi_env = dm_env_wrapper.DMEnvWrapper(

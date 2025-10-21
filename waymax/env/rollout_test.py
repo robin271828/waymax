@@ -57,7 +57,7 @@ class UtilsTest(tf.test.TestCase, parameterized.TestCase):
     env_config = _config.EnvironmentConfig(
         init_steps=2, max_num_objects=self.dataset_config.max_num_objects
     )
-    env = _env.MultiAgentEnvironment(
+    env = _env.BaseEnvironment(
         dynamics_model=dynamics.DeltaGlobal(), config=env_config
     )
     rollout_fn = functools.partial(
@@ -80,7 +80,7 @@ class UtilsTest(tf.test.TestCase, parameterized.TestCase):
     )
 
   def test_rollout_result_matches_dynamics_and_reward(self):
-    env = _env.MultiAgentEnvironment(
+    env = _env.BaseEnvironment(
         dynamics_model=dynamics.DeltaGlobal(),
         config=_config.EnvironmentConfig(
             init_steps=2,

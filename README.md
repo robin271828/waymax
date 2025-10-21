@@ -118,7 +118,7 @@ from waymax import env, config, dynamics, datatypes
 dynamics_model = dynamics.InvertibleBicycleModel()
 env_config = config.EnvironmentConfig()
 scenarios = dataloader.simulator_state_generator(config.WOD_1_1_0_TRAINING)
-waymax_env = env.MultiAgentEnvironment(dynamics_model, env_config)
+waymax_env = env.BaseEnvironment(dynamics_model, env_config)
 
 # Rollout
 state = waymax_env.reset(next(scenarios))
@@ -140,6 +140,9 @@ getting started:
 -   [multi_actors_demo.ipynb](https://github.com/waymo-research/waymax/blob/main/docs/notebooks/multi_actors_demo.ipynb)
     shows how to instantiate multiple agents and run a simple closed-loop
     simulation.
+-   [sdc_paths_demo.ipynb](https://github.com/waymo-research/waymax/blob/main/docs/notebooks/sdc_paths_demo.ipynb)
+    introduces the `sdc_paths` features, available in the WOMD 1.3.1 dataset and
+    onwards.
 -   [wosac_submission_via_waymax.ipynb](https://github.com/waymo-research/waymax/blob/main/docs/notebooks/wosac_submission_via_waymax.ipynb)
     shows how to create a Waymo Open Sim Agents Challenge submission file.
 
@@ -160,7 +163,3 @@ Brandyn White and Aleksandra Faust, and Rowan McAllister and Dragomir Anguelov a
 booktitle={Proceedings of the Neural Information Processing Systems Track on Datasets and
 Benchmarks},year={2023}}
 ```
-
-## Contact
-
-Please email any questions to [waymax@google.com](mailto:waymax@google.com), or raise an issue on Github.

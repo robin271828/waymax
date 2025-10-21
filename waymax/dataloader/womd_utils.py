@@ -147,12 +147,11 @@ def get_features_description(
   Args:
     max_num_objects: Max number of objects.
     max_num_rg_points: Max number of sampled roadgraph points.
-    include_sdc_paths: [Waymo-internal only] Whether to include roadgraph
-      traversal paths for the SDC.
-    num_paths: [Waymo-internal only] Optional number of SDC paths. Must be
-      defined if `include_sdc_paths` is True.
-    num_points_per_path: [Waymo-internal only] Optional number of points per SDC
-      path. Must be defined if `include_sdc_paths` is True.
+    include_sdc_paths: Whether to include roadgraph traversal paths for the SDC.
+    num_paths: Number of SDC paths. Applicable only when `include_sdc_paths` is
+      `True`.
+    num_points_per_path: Number of points per SDC path. Applicable only when
+      `include_sdc_paths` is `True`.
     num_tls: Maximum number of traffic lights.
 
   Returns:
@@ -503,12 +502,15 @@ def _traffic_light_to_dict(
 ) -> dict[str, jax.Array]:
   """Generates the corresponding mpdata for TrafficLights fields."""
   return {
-      f'traffic_light_state/{time_prefix}/state': jnp.swapaxes(tls.state, 0, 1),
-      f'traffic_light_state/{time_prefix}/valid': jnp.swapaxes(tls.valid, 0, 1),
-      f'traffic_light_state/{time_prefix}/x': jnp.swapaxes(tls.x, 0, 1),
-      f'traffic_light_state/{time_prefix}/y': jnp.swapaxes(tls.y, 0, 1),
-      f'traffic_light_state/{time_prefix}/z': jnp.swapaxes(tls.z, 0, 1),
-      f'traffic_light_state/{time_prefix}/id': jnp.swapaxes(tls.lane_ids, 0, 1),
+      f'traffic_light_state/{time_prefix}/state': jnp.swapaxes(
+          tls.state, -2, -1),
+      f'traffic_light_state/{time_prefix}/valid': jnp.swapaxes(
+          tls.valid, -2, -1),
+      f'traffic_light_state/{time_prefix}/x': jnp.swapaxes(tls.x, -2, -1),
+      f'traffic_light_state/{time_prefix}/y': jnp.swapaxes(tls.y, -2, -1),
+      f'traffic_light_state/{time_prefix}/z': jnp.swapaxes(tls.z, -2, -1),
+      f'traffic_light_state/{time_prefix}/id': jnp.swapaxes(
+          tls.lane_ids, -2, -1),
       f'traffic_light_state/{time_prefix}/timestamp_micros': timestamp_micros,
   }
 
