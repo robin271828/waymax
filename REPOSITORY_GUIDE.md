@@ -52,6 +52,39 @@ test_simulation.py      # Quick simulation test script
 
 ## Core Concepts
 
+### State Transition Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> LoadScenario: dataloader.simulator_state_generator()
+    LoadScenario --> InitialState: env.reset(scenario)
+
+    InitialState --> SimulationStep: env.step(state, action)
+    SimulationStep --> ApplyDynamics: Update controlled objects
+    ApplyDynamics --> ApplySimAgents: Update sim agents
+    ApplySimAgents --> IncrementTime: timestep += 1
+    IncrementTime --> CheckDone: Check is_done
+
+    CheckDone --> SimulationStep: timestep < 90
+    CheckDone --> [*]: timestep >= 90
+
+    note right of SimulationStep
+        Optional:
+        - env.reward(state, action)
+        - env.metrics(state)
+    end note
+
+    note right of InitialState
+        timestep = init_steps - 1
+        (typically 10)
+    end note
+
+    note right of CheckDone
+        state.is_done = True
+        when timestep >= 90
+    end note
+```
+
 ### 1. SimulatorState
 
 The top-level state container that holds everything about a scenario:
@@ -133,7 +166,152 @@ Configure via `EnvironmentConfig.controlled_object`.
 
 ## Data Flow
 
+### Architecture Overview
+
+```mermaid
+graph TB
+    subgraph "Data Layer"
+        WOMD[WOMD TFRecords]
+        DL[dataloader]
+        WOMD --> DL
+    end
+
+    subgraph "Core State"
+        SS[SimulatorState<br/>- sim_trajectory<br/>- log_trajectory<br/>- roadgraph<br/>- metadata]
+        DL --> SS
+    end
+
+    subgraph "Environment Layer"
+        ENV[BaseEnvironment<br/>PlanningAgentEnvironment]
+        SS --> ENV
+    end
+
+    subgraph "Simulation Components"
+        DYN[Dynamics Models<br/>InvertibleBicycle, Delta, etc.]
+        AGENTS[Sim Agents<br/>IDM, Expert, etc.]
+        ENV --> DYN
+        ENV --> AGENTS
+    end
+
+    subgraph "Evaluation"
+        MET[Metrics<br/>overlap, offroad, etc.]
+        REW[Rewards]
+        ENV --> MET
+        MET --> REW
+    end
+
+    subgraph "User Interface"
+        POL[Your Policy]
+        ACT[Action]
+        POL --> ACT
+        ACT --> ENV
+    end
+
+    ENV --> SS
+
+    style SS fill:#e1f5ff
+    style ENV fill:#fff4e1
+    style POL fill:#ffe1f5
+```
+
+### Module Dependencies
+
+```mermaid
+graph LR
+    subgraph "Foundation"
+        DT[datatypes<br/>PyTree structures]
+        CFG[config<br/>Dataclasses]
+    end
+
+    subgraph "Data Loading"
+        DL[dataloader<br/>WOMD parsing]
+    end
+
+    subgraph "Simulation Core"
+        DYN[dynamics<br/>State transitions]
+        ENV[env<br/>RL interface]
+        AGT[agents<br/>Sim agents]
+    end
+
+    subgraph "Evaluation"
+        MET[metrics<br/>Performance]
+        REW[rewards<br/>Linear combination]
+    end
+
+    subgraph "Utilities"
+        UTIL[utils<br/>Geometry, testing]
+        VIZ[visualization<br/>Rendering]
+    end
+
+    CFG --> DL
+    CFG --> ENV
+    CFG --> AGT
+    DT --> DL
+    DT --> DYN
+    DT --> ENV
+    DT --> AGT
+    DT --> MET
+    DL --> ENV
+    DYN --> ENV
+    AGT --> ENV
+    MET --> REW
+    REW --> ENV
+    UTIL --> DL
+    UTIL --> ENV
+    VIZ --> DT
+
+    style DT fill:#e1f5ff
+    style ENV fill:#fff4e1
+```
+
 ### Typical Simulation Loop
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Dataloader
+    participant Environment
+    participant Dynamics
+    participant SimAgents
+    participant Metrics
+
+    User->>Dataloader: simulator_state_generator(config)
+    Dataloader-->>User: scenario (SimulatorState)
+
+    User->>Environment: reset(scenario)
+    Environment->>Environment: Copy log to sim trajectory
+    Environment-->>User: initial_state
+
+    loop Until state.is_done
+        User->>User: policy(state) → action
+        User->>Environment: step(state, action)
+
+        Environment->>Dynamics: forward(state, action)
+        Dynamics-->>Environment: updated controlled objects
+
+        Environment->>SimAgents: control non-controlled objects
+        SimAgents-->>Environment: updated sim agents
+
+        Environment->>Environment: increment timestep
+        Environment-->>User: new_state
+
+        opt Compute Reward
+            User->>Environment: reward(state, action)
+            Environment->>Metrics: compute all metrics
+            Metrics-->>Environment: metric results
+            Environment-->>User: reward value
+        end
+
+        opt Evaluate Performance
+            User->>Environment: metrics(state)
+            Environment->>Metrics: compute metrics
+            Metrics-->>Environment: MetricResults
+            Environment-->>User: metrics dict
+        end
+    end
+```
+
+### Detailed Simulation Flow
 
 ```
 1. Load Scenario
