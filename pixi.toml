@@ -1,0 +1,45 @@
+[project]
+name = "waymax"
+version = "0.1.0"
+description = "Waymax: An accelerated simulator for autonomous driving research"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = ">=3.10,<3.14"
+numpy = ">=1.20"
+jax = ">=0.4.6"
+jaxlib = ">=0.4.6"
+tensorflow = ">=2.11.0"
+chex = ">=0.1.6"
+dm-env = ">=1.6"
+flax = ">=0.6.7"
+matplotlib = ">=3.7.1"
+dm-tree = ">=0.1.8"
+immutabledict = ">=2.2.3"
+pillow = ">=9.4.0"
+mediapy = ">=1.1.6"
+tqdm = ">=4.65.0"
+absl-py = ">=1.4.0"
+pytest = ">=7.0"
+
+[tasks]
+# Development tasks
+test = "pytest waymax/"
+test-single = { cmd = "pytest", depends_on = [] }
+lint = "echo 'Linting not configured yet'"
+
+# Run the test simulation
+test-sim = "python test_simulation.py"
+
+# Install the package in development mode
+install-dev = "pip install -e ."
+
+[feature.cuda]
+# Optional CUDA support - activate with: pixi shell -e cuda
+channels = ["conda-forge", "nvidia"]
+dependencies = { cuda-version = "12.*" }
+
+[feature.dev]
+dependencies = { jupyter = "*", ipython = "*" }
+tasks = { notebook = "jupyter notebook" }
