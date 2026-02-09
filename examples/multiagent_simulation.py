@@ -22,6 +22,7 @@ Usage:
 
 import argparse
 import dataclasses
+from datetime import datetime
 import os
 from pathlib import Path
 from typing import Optional
@@ -235,9 +236,10 @@ def save_visualization(
     from PIL import Image
     from waymax.visualization import utils as viz_utils
 
-    # Default to outputs directory with MP4 format
+    # Default to outputs directory with MP4 format and timestamp
     if output_path is None:
-        output_path = str(get_output_dir() / "simulation_output.mp4")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = str(get_output_dir() / f"simulation_{timestamp}.mp4")
 
     # Ensure parent directory exists
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -247,11 +249,11 @@ def save_visualization(
     viz_config = viz_utils.VizConfig()
 
     # Fixed figure size for consistent frame dimensions
-    # Use even dimensions for video codec compatibility
-    fig_width = 6
-    fig_height = 6
+    # Use dimensions divisible by 16 for video codec compatibility (macro_block_size)
+    frame_size = (640, 640)  # 640 is divisible by 16
     dpi = 100
-    frame_size = (fig_width * dpi, fig_height * dpi)
+    fig_width = frame_size[0] / dpi
+    fig_height = frame_size[1] / dpi
 
     for i, state in enumerate(states):
         # Create figure with fixed size
@@ -380,7 +382,7 @@ def main():
 
     # 6. Save visualization (optional)
     if args.save_video:
-        save_visualization(states, args.output)
+        save_visualization(states, args.output, fps=args.fps)
 
     # Summary
     print("\n" + "=" * 70)
