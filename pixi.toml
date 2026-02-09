@@ -3,7 +3,7 @@ name = "waymax"
 version = "0.1.0"
 description = "Waymax: An accelerated simulator for autonomous driving research"
 channels = ["conda-forge"]
-platforms = ["linux-64"]
+platforms = ["linux-64", "osx-arm64", "osx-64"]
 
 [dependencies]
 python = ">=3.10,<3.14"
@@ -22,6 +22,8 @@ mediapy = ">=1.1.6"
 tqdm = ">=4.65.0"
 absl-py = ">=1.4.0"
 pytest = ">=7.0"
+pip = ">=21.0"
+imageio = ">=2.25"
 
 [tasks]
 # Development tasks
@@ -31,6 +33,9 @@ lint = "echo 'Linting not configured yet'"
 
 # Run the test simulation
 test-sim = "python test_simulation.py"
+
+# Run the multi-agent example
+multiagent-example = "python examples/multiagent_simulation.py"
 
 # Install the package in development mode
 install-dev = "pip install -e ."
