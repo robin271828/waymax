@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "waymax"
 version = "0.1.0"
 description = "Waymax: An accelerated simulator for autonomous driving research"
@@ -24,11 +24,13 @@ absl-py = ">=1.4.0"
 pytest = ">=7.0"
 pip = ">=21.0"
 imageio = ">=2.25"
+imageio-ffmpeg = ">=0.4"
+ffmpeg = ">=4.0"
 
 [tasks]
 # Development tasks
 test = "pytest waymax/"
-test-single = { cmd = "pytest", depends_on = [] }
+test-single = { cmd = "pytest", depends-on = [] }
 lint = "echo 'Linting not configured yet'"
 
 # Run the test simulation
@@ -41,10 +43,18 @@ multiagent-example = "python examples/multiagent_simulation.py"
 install-dev = "pip install -e ."
 
 [feature.cuda]
-# Optional CUDA support - activate with: pixi shell -e cuda
+# Optional CUDA support
 channels = ["conda-forge", "nvidia"]
 dependencies = { cuda-version = "12.*" }
 
 [feature.dev]
 dependencies = { jupyter = "*", ipython = "*" }
 tasks = { notebook = "jupyter notebook" }
+
+[environments]
+# Default environment (no extra features)
+default = []
+# CUDA environment: pixi run -e cuda <command>
+cuda = ["cuda"]
+# Development environment with Jupyter: pixi run -e dev <command>
+dev = ["dev"]

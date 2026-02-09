@@ -219,12 +219,13 @@ def get_output_dir() -> Path:
 def save_visualization(
     states: list[datatypes.SimulatorState],
     output_path: Optional[str] = None,
+    fps: int = 10,
 ):
-    """Save simulation as animated GIF."""
+    """Save simulation as MP4 video (or GIF if .gif extension)."""
     try:
-        import imageio
+        import imageio.v3 as iio
     except ImportError:
-        print("Install imageio to save visualization: pip install imageio")
+        print("Install imageio to save visualization: pip install imageio imageio-ffmpeg")
         return
 
     import io
@@ -234,9 +235,9 @@ def save_visualization(
     from PIL import Image
     from waymax.visualization import utils as viz_utils
 
-    # Default to outputs directory
+    # Default to outputs directory with MP4 format
     if output_path is None:
-        output_path = str(get_output_dir() / "simulation_output.gif")
+        output_path = str(get_output_dir() / "simulation_output.mp4")
 
     # Ensure parent directory exists
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -246,9 +247,11 @@ def save_visualization(
     viz_config = viz_utils.VizConfig()
 
     # Fixed figure size for consistent frame dimensions
+    # Use even dimensions for video codec compatibility
     fig_width = 6
     fig_height = 6
     dpi = 100
+    frame_size = (fig_width * dpi, fig_height * dpi)
 
     for i, state in enumerate(states):
         # Create figure with fixed size
@@ -263,7 +266,7 @@ def save_visualization(
         buf.seek(0)
         img = Image.open(buf)
         # Resize to ensure consistent dimensions
-        img = img.resize((fig_width * dpi, fig_height * dpi), Image.Resampling.LANCZOS)
+        img = img.resize(frame_size, Image.Resampling.LANCZOS)
         imgs.append(np.array(img.convert('RGB')))
         plt.close(fig)
         buf.close()
@@ -272,7 +275,20 @@ def save_visualization(
             print(f"  Rendering frame {i + 1}/{len(states)}")
 
     print(f"Saving to {output_path}...")
-    imageio.mimsave(output_path, imgs, fps=10, loop=0)
+
+    # Choose format based on extension
+    if output_path.endswith('.gif'):
+        iio.imwrite(output_path, imgs, fps=fps, loop=0)
+    else:
+        # MP4 with h264 codec for broad compatibility
+        iio.imwrite(
+            output_path,
+            imgs,
+            fps=fps,
+            codec='libx264',
+            pixelformat='yuv420p',  # For compatibility with most players
+        )
+
     print(f"Saved visualization to {output_path}")
 
 
@@ -288,13 +304,19 @@ def main():
     parser.add_argument(
         "--save-video",
         action="store_true",
-        help="Save simulation as animated GIF",
+        help="Save simulation as MP4 video",
     )
     parser.add_argument(
         "--output",
         type=str,
         default=None,
-        help="Output path for visualization (default: outputs/simulation_output.gif)",
+        help="Output path for visualization (default: outputs/simulation_output.mp4). Use .gif extension for GIF format.",
+    )
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=10,
+        help="Frames per second for video output (default: 10)",
     )
     parser.add_argument(
         "--max-objects",
