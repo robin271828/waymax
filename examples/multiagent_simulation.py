@@ -217,10 +217,139 @@ def get_output_dir() -> Path:
     return output_dir
 
 
+@dataclasses.dataclass
+class VisualizationConfig:
+    """Configuration for what to show in visualization."""
+    show_log_trajectory: bool = False  # Show ground truth logged path
+    show_sdc_paths: bool = False  # Show SDC route options
+    show_velocity_vectors: bool = False  # Show velocity arrows
+    show_future_trajectory: bool = False  # Show future logged trajectory
+    show_metrics: bool = False  # Show metrics overlay
+    show_agent_ids: bool = True  # Show agent ID labels
+    show_legend: bool = False  # Show color legend
+    future_steps: int = 20  # How many future steps to show
+
+
+def plot_enhanced_state(
+    ax,
+    state: datatypes.SimulatorState,
+    viz_config,
+    vis_options: VisualizationConfig,
+    metrics_results: Optional[dict] = None,
+):
+    """Plot simulator state with enhanced visualization options."""
+    # Base visualization
+    visualization.plot_simulator_state_matplotlib(
+        ax, state, viz_config, use_log_traj=False
+    )
+
+    timestep = int(state.timestep)
+
+    # Show logged trajectory (ground truth) as dotted line
+    if vis_options.show_log_trajectory:
+        log_traj = state.log_trajectory
+        for obj_idx in range(log_traj.num_objects):
+            if not log_traj.valid[obj_idx, timestep]:
+                continue
+            # Future logged trajectory
+            future_valid = log_traj.valid[obj_idx, timestep:]
+            if np.any(future_valid):
+                future_x = log_traj.x[obj_idx, timestep:][future_valid]
+                future_y = log_traj.y[obj_idx, timestep:][future_valid]
+                ax.plot(future_x, future_y, 'g--', alpha=0.5, linewidth=1,
+                       label='Log trajectory' if obj_idx == 0 else None)
+
+    # Show SDC paths (route options)
+    if vis_options.show_sdc_paths and state.sdc_paths is not None:
+        paths = state.sdc_paths
+        for i in range(paths.shape[0]):
+            if not np.any(paths.valid[i]):
+                continue
+            valid_mask = paths.valid[i]
+            x = paths.x[i][valid_mask]
+            y = paths.y[i][valid_mask]
+            # Cyan for on-route, light green for off-route
+            color = 'cyan' if paths.on_route[i, 0] else 'lightgreen'
+            ax.plot(x, y, '.', color=color, ms=2, alpha=0.3,
+                   label='SDC path' if i == 0 else None)
+
+    # Show velocity vectors
+    if vis_options.show_velocity_vectors:
+        sim_traj = state.sim_trajectory
+        # Collect all velocity vectors for quiver plot
+        xs, ys, vxs, vys = [], [], [], []
+        for obj_idx in range(sim_traj.num_objects):
+            if not sim_traj.valid[obj_idx, timestep]:
+                continue
+            x = float(sim_traj.x[obj_idx, timestep])
+            y = float(sim_traj.y[obj_idx, timestep])
+            vx = float(sim_traj.vel_x[obj_idx, timestep])
+            vy = float(sim_traj.vel_y[obj_idx, timestep])
+            # Skip if velocity is near zero
+            speed = np.sqrt(vx**2 + vy**2)
+            if speed < 0.1:
+                continue
+            xs.append(x)
+            ys.append(y)
+            vxs.append(vx)
+            vys.append(vy)
+
+        if xs:
+            # Use quiver for better arrow rendering
+            ax.quiver(xs, ys, vxs, vys,
+                     color='orange', scale=30, width=0.008,
+                     headwidth=4, headlength=5, headaxislength=4,
+                     zorder=100, alpha=0.9,
+                     label='Velocity')
+
+    # Show future trajectory (where agents will go based on log)
+    if vis_options.show_future_trajectory:
+        log_traj = state.log_trajectory
+        future_end = min(timestep + vis_options.future_steps, log_traj.num_timesteps)
+        for obj_idx in range(log_traj.num_objects):
+            if not log_traj.valid[obj_idx, timestep]:
+                continue
+            future_slice = slice(timestep, future_end)
+            future_valid = log_traj.valid[obj_idx, future_slice]
+            if np.any(future_valid):
+                future_x = log_traj.x[obj_idx, future_slice][future_valid]
+                future_y = log_traj.y[obj_idx, future_slice][future_valid]
+                ax.plot(future_x, future_y, 'b:', alpha=0.4, linewidth=1)
+
+    # Show metrics overlay
+    if vis_options.show_metrics and metrics_results:
+        # Get view bounds
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        text_x = xlim[0] + 5
+        text_y = ylim[1] - 5
+
+        metrics_text = []
+        for name, result in metrics_results.items():
+            if hasattr(result, 'value'):
+                val = result.value
+                valid = result.valid if hasattr(result, 'valid') else np.ones_like(val, dtype=bool)
+                valid_vals = val[valid]
+                if len(valid_vals) > 0:
+                    mean_val = float(np.mean(valid_vals))
+                    metrics_text.append(f"{name}: {mean_val:.2f}")
+
+        if metrics_text:
+            ax.text(text_x, text_y, '\n'.join(metrics_text),
+                   fontsize=8, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    # Show legend
+    if vis_options.show_legend:
+        ax.legend(loc='upper right', fontsize=6)
+
+
 def save_visualization(
     states: list[datatypes.SimulatorState],
     output_path: Optional[str] = None,
     fps: int = 10,
+    vis_options: Optional[VisualizationConfig] = None,
+    metrics_results: Optional[dict] = None,
 ):
     """Save simulation as MP4 video (or GIF if .gif extension)."""
     try:
@@ -236,6 +365,9 @@ def save_visualization(
     from PIL import Image
     from waymax.visualization import utils as viz_utils
 
+    if vis_options is None:
+        vis_options = VisualizationConfig()
+
     # Default to outputs directory with MP4 format and timestamp
     if output_path is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -246,7 +378,7 @@ def save_visualization(
 
     print(f"\nGenerating visualization...")
     imgs = []
-    viz_config = viz_utils.VizConfig()
+    viz_config = viz_utils.VizConfig(show_agent_id=vis_options.show_agent_ids)
 
     # Fixed figure size for consistent frame dimensions
     # Use dimensions divisible by 16 for video codec compatibility (macro_block_size)
@@ -258,9 +390,9 @@ def save_visualization(
     for i, state in enumerate(states):
         # Create figure with fixed size
         fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=dpi)
-        visualization.plot_simulator_state_matplotlib(
-            ax, state, viz_config, use_log_traj=False
-        )
+
+        # Use enhanced plotting
+        plot_enhanced_state(ax, state, viz_config, vis_options, metrics_results)
 
         # Save to buffer and convert to numpy array
         buf = io.BytesIO()
@@ -326,6 +458,49 @@ def main():
         default=32,
         help="Maximum number of objects to load",
     )
+
+    # Visualization options
+    viz_group = parser.add_argument_group("visualization options")
+    viz_group.add_argument(
+        "--show-log-traj",
+        action="store_true",
+        help="Show ground truth logged trajectory (green dashed)",
+    )
+    viz_group.add_argument(
+        "--show-sdc-paths",
+        action="store_true",
+        help="Show SDC route options (cyan=on-route, green=off-route)",
+    )
+    viz_group.add_argument(
+        "--show-velocity",
+        action="store_true",
+        help="Show velocity vectors (orange arrows)",
+    )
+    viz_group.add_argument(
+        "--show-future",
+        action="store_true",
+        help="Show future logged trajectory (blue dotted)",
+    )
+    viz_group.add_argument(
+        "--show-metrics",
+        action="store_true",
+        help="Show metrics overlay on video",
+    )
+    viz_group.add_argument(
+        "--show-legend",
+        action="store_true",
+        help="Show color legend",
+    )
+    viz_group.add_argument(
+        "--hide-agent-ids",
+        action="store_true",
+        help="Hide agent ID labels",
+    )
+    viz_group.add_argument(
+        "--show-all",
+        action="store_true",
+        help="Enable all visualization options",
+    )
     args = parser.parse_args()
 
     print("=" * 70)
@@ -382,7 +557,23 @@ def main():
 
     # 6. Save visualization (optional)
     if args.save_video:
-        save_visualization(states, args.output, fps=args.fps)
+        # Build visualization config from args
+        vis_options = VisualizationConfig(
+            show_log_trajectory=args.show_log_traj or args.show_all,
+            show_sdc_paths=args.show_sdc_paths or args.show_all,
+            show_velocity_vectors=args.show_velocity or args.show_all,
+            show_future_trajectory=args.show_future or args.show_all,
+            show_metrics=args.show_metrics or args.show_all,
+            show_agent_ids=not args.hide_agent_ids,
+            show_legend=args.show_legend or args.show_all,
+        )
+        save_visualization(
+            states,
+            args.output,
+            fps=args.fps,
+            vis_options=vis_options,
+            metrics_results=metrics_results,
+        )
 
     # Summary
     print("\n" + "=" * 70)
