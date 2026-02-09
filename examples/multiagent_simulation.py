@@ -296,10 +296,11 @@ def plot_enhanced_state(
 
         if xs:
             # Use quiver for better arrow rendering
+            # Red color for high visibility, scale adjusts arrow length
             ax.quiver(xs, ys, vxs, vys,
-                     color='orange', scale=30, width=0.008,
+                     color='red', scale=25, width=0.012,
                      headwidth=4, headlength=5, headaxislength=4,
-                     zorder=100, alpha=0.9,
+                     zorder=100, alpha=0.95,
                      label='Velocity')
 
     # Show future trajectory (where agents will go based on log)
